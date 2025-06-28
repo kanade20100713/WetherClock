@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光市天気時計</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .clock {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .date {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .location {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .weather-widget {
+            margin: 20px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 天気に応じた背景アニメーション */
+        .sunny {
+            background: linear-gradient(135deg, #ffd89b, #19547b);
+            animation: sunnyBG 20s ease infinite;
+        }
+
+        .rainy {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            animation: rainyBG 15s ease infinite;
+        }
+
+        .cloudy {
+            background: linear-gradient(135deg, #bdc3c7, #2c3e50);
+            animation: cloudyBG 25s ease infinite;
+        }
+
+        @keyframes sunnyBG {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes rainyBG {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes cloudyBG {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* 浮遊アニメーション */
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* 雨のアニメーション */
+        .rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: rain 0.5s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes rain {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .show-rain {
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="rain" id="rainEffect"></div>
+    
+    <div class="container floating">
+        <div class="location">📍 光市, 山口県</div>
+        <div class="clock" id="clock"></div>
+        <div class="date" id="date"></div>
+        
+        <div class="weather-widget">
+            <!-- Yahoo天気ウィジェット -->
+            <iframe src="https://weather.yahoo.co.jp/weather/jp/35/6710/35208.html" 
+                    width="300" height="400" frameborder="0" scrolling="no">
+            </iframe>
+        </div>
+        
+        <div class="weather-widget">
+            <!-- Windy.com ウィジェット -->
+            <iframe width="300" height="200" 
+                    src="https://embed.windy.com/embed2.html?lat=34.0167&lon=131.9333&detailLat=34.0167&detailLon=131.9333&width=300&height=200&zoom=10&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" 
+                    frameborder="0">
+            </iframe>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const clock = document.getElementById('clock');
+            const dateElement = document.getElementById('date');
+            
+            const timeString = now.toLocaleTimeString('ja-JP', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            const dateString = now.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+            
+            clock.textContent = timeString;
+            dateElement.textContent = dateString;
+        }
+
+        function updateWeatherBackground() {
+            const hour = new Date().getHours();
+            const body = document.body;
+            const rainEffect = document.getElementById('rainEffect');
+            
+            // 時間に応じた背景変更
+            if (hour >= 6 && hour < 18) {
+                body.className = 'sunny';
+                rainEffect.classList.remove('show-rain');
+            } else if (hour >= 18 && hour < 22) {
+                body.className = 'cloudy';
+                rainEffect.classList.remove('show-rain');
+            } else {
+                body.className = 'rainy';
+                rainEffect.classList.add('show-rain');
+            }
+        }
+
+        // 時計を1秒ごとに更新
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 背景を5分ごとに更新
+        setInterval(updateWeatherBackground, 300000);
+        updateWeatherBackground();
+
+        // 天気情報をシミュレート（実際の天気に応じて手動で変更可能）
+        function simulateWeather() {
+            const weathers = ['sunny', 'rainy', 'cloudy'];
+            const randomWeather = weathers[Math.floor(Math.random() * weathers.length)];
+            document.body.className = randomWeather;
+            
+            const rainEffect = document.getElementById('rainEffect');
+            if (randomWeather === 'rainy') {
+                rainEffect.classList.add('show-rain');
+            } else {
+                rainEffect.classList.remove('show-rain');
+            }
+        }
+
+        // 10秒ごとに天気をランダム変更（デモ用）
+        setInterval(simulateWeather, 10000);
+    </script>
+</body>
+</html>
