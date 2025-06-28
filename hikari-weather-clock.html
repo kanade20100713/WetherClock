@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光市 天気時計</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-size: cover;
+            background-position: center;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: white;
+            transition: background-image 1s ease-in-out;
+        }
+        
+        body.sunny {
+            background-image: url('https://media.giphy.com/media/o7R0zQ62m8Nk4/giphy.gif');
+        }
+        
+        body.cloudy {
+            background-image: url('https://media.giphy.com/media/lOkbL3MJnEtHi/giphy.gif');
+        }
+        
+        body.rainy {
+            background-image: url('https://media.giphy.com/media/l0Iy5fjHyedk9aDGU/giphy.gif');
+        }
+        
+        body.snowy {
+            background-image: url('https://media.giphy.com/media/7Bgpw7PwdxoDC/giphy.gif');
+        }
+        
+        body.thunderstorm {
+            background-image: url('https://media.giphy.com/media/3osxYaDlxLcexsQiKk/giphy.gif');
+        }
+        
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px 60px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .location {
+            font-size: 24px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .clock {
+            font-size: 72px;
+            font-weight: 300;
+            margin: 20px 0;
+            letter-spacing: 2px;
+        }
+        
+        .date {
+            font-size: 20px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+        
+        .weather {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-size: 18px;
+        }
+        
+        .weather-icon {
+            font-size: 48px;
+        }
+        
+        .weather-info {
+            text-align: left;
+        }
+        
+        .temperature {
+            font-size: 36px;
+            font-weight: 300;
+        }
+        
+        .description {
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="location">山口県光市</div>
+        <div class="clock" id="clock">00:00:00</div>
+        <div class="date" id="date">0000年00月00日（月）</div>
+        <div class="weather" id="weather">
+            <div class="weather-icon" id="weather-icon">⏳</div>
+            <div class="weather-info">
+                <div class="temperature" id="temperature">--°C</div>
+                <div class="description" id="description">読み込み中...</div>
+            </div>
+        </div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        // 時計の更新
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+            
+            // 日付の更新
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekday = weekdays[now.getDay()];
+            document.getElementById('date').textContent = `${year}年${month}月${day}日（${weekday}）`;
+        }
+
+        // 天気アイコンの取得
+        function getWeatherIcon(code) {
+            if (code >= 200 && code < 300) return '⛈️';  // 雷雨
+            if (code >= 300 && code < 400) return '🌦️';  // 霧雨
+            if (code >= 500 && code < 600) return '🌧️';  // 雨
+            if (code >= 600 && code < 700) return '❄️';   // 雪
+            if (code >= 700 && code < 800) return '🌫️';  // 霧
+            if (code === 800) return '☀️';               // 晴れ
+            if (code > 800 && code < 900) return '☁️';   // 曇り
+            return '🌤️';
+        }
+        
+        // 天気に応じて背景画像を変更
+        function updateBackground(weatherCode) {
+            const body = document.body;
+            body.className = '';
+            
+            if (weatherCode >= 200 && weatherCode < 300) {
+                body.classList.add('thunderstorm');
+            } else if (weatherCode >= 500 && weatherCode < 600) {
+                body.classList.add('rainy');
+            } else if (weatherCode >= 600 && weatherCode < 700) {
+                body.classList.add('snowy');
+            } else if (weatherCode === 800) {
+                body.classList.add('sunny');
+            } else if (weatherCode > 800 && weatherCode < 900) {
+                body.classList.add('cloudy');
+            }
+        }
+
+        // 天気の取得
+        async function updateWeather() {
+            const apiKey = '9ab0ebef572fc7f28a0c4cbb05d17c3d'; // OpenWeatherMap APIキーを設定してください
+            const lat = 33.9619; // 光市の緯度
+            const lon = 131.9422; // 光市の経度
+            const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=ja`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('天気データの取得に失敗しました');
+                }
+                
+                const data = await response.json();
+                const temp = Math.round(data.main.temp);
+                const description = data.weather[0].description;
+                const icon = getWeatherIcon(data.weather[0].id);
+                
+                document.getElementById('weather-icon').textContent = icon;
+                document.getElementById('temperature').textContent = `${temp}°C`;
+                document.getElementById('description').textContent = description;
+                document.getElementById('error').textContent = '';
+                
+                // 天気に応じて背景を変更
+                updateBackground(data.weather[0].id);
+            } catch (error) {
+                document.getElementById('error').textContent = 
+                    'APIキーを設定してください（OpenWeatherMap）';
+                document.getElementById('weather-icon').textContent = '❓';
+                document.getElementById('temperature').textContent = '--°C';
+                document.getElementById('description').textContent = 'データなし';
+            }
+        }
+
+        // 初期化と定期更新
+        updateClock();
+        updateWeather();
+        setInterval(updateClock, 1000);
+        setInterval(updateWeather, 600000); // 10分ごとに天気を更新
+    </script>
+</body>
+</html>
